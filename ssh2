@@ -45,13 +45,14 @@ all_instances = []
 for instances in parsed['Reservations']:
 	for instance in instances['Instances']:
 		all_instances.append(instance)
+all_instances = sorted(all_instances, key=lambda instance: extract_name(instance))
 
 if not num:
 	print "\nServers list:\n"
 	for i, instance in enumerate(all_instances, 1):
 		choice = '[%d]' % i
 		name = extract_name(instance)
-		print '%-4s %-55s %-30s' % (choice, instance['PublicDnsName'], name)
+		print '%-4s %-55s %-30s' % (choice, name, instance['PublicDnsName'])
 
 default_num = 1
 if os.path.exists(cache_file_num):
