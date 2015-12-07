@@ -4,17 +4,30 @@ from optparse import OptionParser
 
 cache_file_list = '/tmp/.ssh2_list'
 cache_file_num = '/tmp/.ssh2_num'
+ssh_key_ident = os.environ['HOME'] + "/.ssh"
 
 usage = "usage: %prog [options] [server_number]\n\
-	server_number: a numeric value corresponding to the server number\n\
-	e.g.: '%prog 1' will ssh into the 1st server in the list."
+	     server_number: a numeric value corresponding to the server number\n\
+	     e.g.: '%prog 1' will ssh into the 1st server in the list."
 
 parser = OptionParser(usage)
-parser.add_option("-x", "--bust-cache", action="store_true",
-	help="refetch servers list from AWS")
-parser.add_option("-u", "--user", action="store",
-                  dest="user", default="ubuntu",
-        help="provide user (default: ubuntu)")
+
+parser.add_option(
+    "-x", "--bust-cache", action="store_true",
+	help="refetch servers list from AWS"
+)
+
+parser.add_option(
+    "-u", "--user", action="store",
+    dest="user", default="ubuntu",
+    help="provide user (default: ubuntu)"
+)
+
+parser.add_option(
+    "-i", "--ident", action="store",
+    help="provide the identity file"
+)
+
 (options, args) = parser.parse_args()
 
 num = ''
@@ -36,7 +49,15 @@ if options.bust_cache or not os.path.exists(cache_file_list):
 	output = subprocess.Popen("aws ec2 describe-instances", shell=True,
 		stdout=subprocess.PIPE).stdout.read()
 	with open(cache_file_list, 'w') as f:
-		f.write(output)
+            f.write(output)
+
+if options.ident or not os.path.exists(cache_file_list):
+    for file in os.listdir(ssh_key_ident):
+        if file.endswith(".pem"):
+            if options.ident + '.pem' == file:
+                ident_key = file
+            else:
+                ident_key = ''
 
 output = open(cache_file_list).read()
 parsed = json.loads(output)
@@ -80,4 +101,11 @@ instance = all_instances[num - 1]
 dns = instance['PublicDnsName']
 
 print "\nConnecting to", extract_name(instance), dns
-os.system('ssh ' + options.user + '@' + dns)
+
+if options.ident and ident_key != '':
+    os.system('ssh -i ' + ssh_key_ident + '/' + ident_key + ' ' + options.user + '@' + dns)
+    print 'ssh -i ' + ssh_key_ident + '/' + ident_key + ' ' + options.user + '@' + dns
+
+else:
+    os.system('ssh '+ options.user + '@' + dns)
+    print 'ssh '+ options.user + '@' + dns
