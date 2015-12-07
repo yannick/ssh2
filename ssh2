@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import subprocess, json, os
 from optparse import OptionParser
+from getpass import getuser
 
 cache_file_list = '/tmp/.ssh2_list'
 cache_file_num = '/tmp/.ssh2_num'
@@ -17,10 +18,11 @@ parser.add_option(
 	help="refetch servers list from AWS"
 )
 
+user = getuser()
 parser.add_option(
     "-u", "--user", action="store",
-    dest="user", default="ubuntu",
-    help="provide user (default: ubuntu)"
+    dest="user", default=user,
+    help=("provide user (default: %s)" % user)
 )
 
 parser.add_option(
